@@ -51,11 +51,23 @@ get_agent_from_id(TargetAgentId,Agent2,TargetStateId),
 
 
 
-% nearest_agent(StateId, AgentId, NearestAgentId, Distance).
+ nearest_agent(StateId, AgentId, NearestAgentId, Distance):- 
+ % get the current state and agents
+    state(StateId, Agents, _, _),
+get_agent_from_id(AgentId, CurrentAgent, StateId),
+% find the distances between the current agent and all other agents in a tuple
+findall(D-Id, (get_agent_from_id(Id, Agent, StateId), Id \= AgentId, distance(CurrentAgent, Agent, D)), Distances),
+% id is all the possible ids of any agent in the list that doesnt have the same id with the current one
+min_member(Distance-NearestAgentId, Distances),
+% make sure the nearest agent has a different name than the current agent
+get_agent_from_id(NearestAgentId, NearestAgent, StateId),
+NearestAgent.name \= CurrentAgent.name.
 
 
 
-% nearest_agent_in_multiverse(StateId, AgentId, TargetStateId, TargetAgentId, Distance).
+
+%nearest_agent_in_multiverse(StateId, AgentId, TargetStateId, TargetAgentId, Distance).
+
 % num_agents_in_state(StateId, Name, NumWarriors, NumWizards, NumRogues).
 % difficulty_of_state(StateId, Name, AgentClass, Difficulty).
 % easiest_traversable_state(StateId, AgentId, TargetStateId).
