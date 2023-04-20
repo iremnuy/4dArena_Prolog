@@ -5,13 +5,18 @@ distance(0, 0, 0).  % a dummy predicate to make the sim work.
 
 
 
+
 get_universe_and_time_for_state(StateId, UniverseId, Time) :-
     history(StateId, UniverseId, Time, _). %for a given state i retrieve universe and time
 
 
 % travel cost based on agent class
-travel_cost(wizard, 2).
-travel_cost(_ , 5).
+%travel_cost(wizard, 2).
+%travel_cost(_ , 5).
+travel_cost(Class, Cost) :-
+    (Class = wizard -> Cost = 2; Cost = 5).
+
+
 
 
 % get_agent_from_id(AgentId, Agent,StateId)
@@ -20,6 +25,8 @@ get_agent_from_id(AgentId, Agent,StateId) :-
     state(StateId, Agents, _, _),
     % retrieve the agent from the ID
      get_dict(AgentId, Agents, Agent).  
+
+
 
 
 %default predicates of the solution
@@ -43,6 +50,7 @@ get_agent_from_id(TargetAgentId,Agent2,TargetStateId),
     % compute the travel cost based on the agent class
 
     travel_cost(Agent1.class, TravelCost1),
+    format("Agent ~w is a ~w ", [AgentId, Agent1.class]),
     %travel_cost(Agent2.class, TravelCost2),
     % compute the multiverse distance using the formula
     Distance is abs(Agent1.x - Agent2.x) + abs(Agent1.y - Agent2.y) +
@@ -66,9 +74,57 @@ NearestAgent.name \= CurrentAgent.name.
 
 
 
-%nearest_agent_in_multiverse(StateId, AgentId, TargetStateId, TargetAgentId, Distance).
+nearest_agent_in_multiverse(StateId, AgentId, TargetStateId, TargetAgentId, Distance) :-
+    % get the current state and agents
+    state(StateId, Agents, _, _),
+    get_agent_from_id(AgentId, CurrentAgent, StateId),
 
-% num_agents_in_state(StateId, Name, NumWarriors, NumWizards, NumRogues).
+    % collect all distances between the current agent and all other agents in each state
+    findall(
+        Distance-CurStateId-Id,
+        (
+            state(CurStateId, CurAgents, _, _),
+          
+            get_agent_from_id(Id, Agent, CurStateId),
+             CurrentAgent.name \= Agent.name,
+            (write(' cur Agents in state '), write(CurStateId), write(': '),write(Id),write(Agent.class),write(Agent.name), nl),
+            multiverse_distance(StateId, AgentId, CurStateId, Id, Distance)
+        ),
+        Distances
+    ),
+    min_member(Distance-NearestStateId-NearestAgentId, Distances),
+% make sure the nearest agent has a different name than the current agent
+get_agent_from_id(NearestAgentId, NearestAgent, NearestStateId),
+     TargetStateId = NearestStateId,
+    TargetAgentId = NearestAgentId.
+    
+
+num_agents_in_state(StateId, Name, NumWarriors, NumWizards, NumRogues) :-
+    state(StateId, AgentDict, _, _),
+    findall(Warrior, (
+        dict_pairs(AgentDict, _, AgentList),
+        member(agent{class: warrior, name: WarriorName}, AgentList),
+       \+ WarriorName = Name
+    ), Warriors),
+    length(Warriors, NumWarriors),
+    findall(Wizard, (
+        dict_pairs(AgentDict, _, AgentList),
+        member(agent{class: wizard, name: WizardName}, AgentList),
+        \+ WizardName = Name
+    ), Wizards),
+    length(Wizards, NumWizards),
+    findall(Rogue, (
+        dict_pairs(AgentDict, _, AgentList),
+        member(agent{class: rogue, name: RogueName}, AgentList),
+        format('Rogue name: ~w~n', [RogueName]),
+        \+ RogueName = Name
+          
+    ), Rogues),
+    length(Rogues, NumRogues).
+
 % difficulty_of_state(StateId, Name, AgentClass, Difficulty).
+
+
+
 % easiest_traversable_state(StateId, AgentId, TargetStateId).
 % basic_action_policy(StateId, AgentId, Action).
