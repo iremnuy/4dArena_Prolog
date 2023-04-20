@@ -99,7 +99,7 @@ get_agent_from_id(NearestAgentId, NearestAgent, NearestStateId),
     TargetAgentId = NearestAgentId.
     
 
-num_agents_in_state(StateId, Name, NumWarriors, NumWizards, NumRogues) :-
+/* num_agents_in_state(StateId, Name, NumWarriors, NumWizards, NumRogues) :-
     state(StateId, AgentDict, _, _),
     findall(Warrior, (
         dict_pairs(AgentDict, _, AgentList),
@@ -120,9 +120,37 @@ num_agents_in_state(StateId, Name, NumWarriors, NumWizards, NumRogues) :-
         \+ RogueName = Name
           
     ), Rogues),
+    length(Rogues, NumRogues). */
+
+    num_agents_in_state(StateId, Name, NumWarriors, NumWizards, NumRogues):-
+    % Find all agents in the state
+    state(StateId, Agents, _, _),
+    %dict_values(AgentsDict, Agents),
+    
+    % Filter the agents by class and name
+    findall(Warrior, (Warrior=Agents.get(AgentId), Warrior.class == warrior, Warrior.name \= Name), Warriors),
+    findall(Wizard, (Wizard=Agents.get(AgentId), Wizard.class == wizard, Wizard.name \= Name), Wizards),
+    findall(Rogue, (Rogue=Agents.get(AgentId), Rogue.class == rogue, Rogue.name \= Name), Rogues),
+    
+    % Get the lengths of the filtered lists
+    length(Warriors, NumWarriors),
+    length(Wizards, NumWizards),
     length(Rogues, NumRogues).
 
-% difficulty_of_state(StateId, Name, AgentClass, Difficulty).
+
+
+ difficulty_of_state(StateId, Name, AgentClass, Difficulty):-
+  state(StateId, Agents, _, _),
+ num_agents_in_state(StateId,Name,NumWarriors,NumWizards,NumRogues),
+  compute_difficulty(AgentClass, NumWarriors, NumWizards, NumRogues, Difficulty).
+
+  compute_difficulty(warrior, NumWarriors, NumWizards, NumRogues, Difficulty) :-
+    Difficulty is 5 * NumWarriors + 8 * NumWizards + 2 * NumRogues.
+compute_difficulty(wizard, NumWarriors, NumWizards, NumRogues, Difficulty) :-
+    Difficulty is 2 * NumWarriors + 5 * NumWizards + 8 * NumRogues.
+compute_difficulty(rogue, NumWarriors, NumWizards, NumRogues, Difficulty) :-
+    Difficulty is 8 * NumWarriors + 2 * NumWizards + 5 * NumRogues.
+
 
 
 
